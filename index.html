@@ -779,6 +779,11 @@
 
       .dot-nav { display: none; }
       .hero-scroll { bottom: 1.5rem; }
+
+      /* Fixed nav overlaps in-page targets; hash scroll lands under the bar without this */
+      section.panel {
+        scroll-margin-top: 5.5rem;
+      }
     }
 
     @media (max-width: 480px) {
@@ -932,7 +937,7 @@
               </div>
               <div class="contact-item">
                 <span class="contact-item-label">Phone</span>
-                <a href="tel:+347751193185" class="contact-item-value">+44 775 119 3185</a>
+                <a href="tel:+447751193185" class="contact-item-value">+44 775 119 3185</a>
               </div>
               <div class="contact-item">
                 <span class="contact-item-label">Location</span>
@@ -941,7 +946,10 @@
             </div>
           </div>
           <div>
-            <form class="contact-form" id="contact-form">
+            <form class="contact-form" id="contact-form" action="https://formsubmit.co/pablo.ruibal.sutil@gmail.com" method="POST">
+              <input type="hidden" name="_subject" id="_subject_field" value="Portfolio inquiry">
+              <input type="hidden" name="_captcha" value="false">
+              <input type="hidden" name="_next" id="form-next" value="">
               <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;height:0;width:0;opacity:0">
               <div class="form-group reveal">
                 <input type="text" id="name" name="name" placeholder=" " required>
@@ -1074,6 +1082,9 @@
       });
     });
 
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navLinks = document.querySelector('.nav-links');
+
     // Nav link clicks
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', (e) => {
@@ -1083,7 +1094,16 @@
         if (!target) return;
 
         if (isMobile) {
-          target.scrollIntoView({ behavior: 'smooth' });
+          const menuWasOpen = navLinks && navLinks.classList.contains('open');
+          if (menuWasOpen && menuToggle) {
+            menuToggle.classList.remove('active');
+            navLinks.classList.remove('open');
+          }
+          const scrollToTarget = () => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          };
+          if (menuWasOpen) setTimeout(scrollToTarget, 480);
+          else scrollToTarget();
         } else {
           const idx = Array.from(panels).findIndex(p => p.id === id);
           if (idx >= 0) goTo(idx);
@@ -1098,20 +1118,19 @@
     }
 
     // Mobile menu
-    const menuToggle = document.querySelector('.menu-toggle');
-    const navLinks = document.querySelector('.nav-links');
-
-    menuToggle.addEventListener('click', () => {
-      menuToggle.classList.toggle('active');
-      navLinks.classList.toggle('open');
-    });
-
-    navLinks.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        menuToggle.classList.remove('active');
-        navLinks.classList.remove('open');
+    if (menuToggle && navLinks) {
+      menuToggle.addEventListener('click', () => {
+        menuToggle.classList.toggle('active');
+        navLinks.classList.toggle('open');
       });
-    });
+
+      navLinks.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          menuToggle.classList.remove('active');
+          navLinks.classList.remove('open');
+        });
+      });
+    }
 
     // Mobile: normal scroll with reveal
     if (isMobile) {
@@ -1138,62 +1157,19 @@
       if (wasMobile !== isMobile) location.reload();
     });
 
-    // Contact form → FormSubmit (delivers to inbox; first use may require email activation link from FormSubmit)
+    // Contact form → FormSubmit via normal POST (more reliable than fetch: ad blockers, JSON quirks, activation edge cases)
     const contactForm = document.querySelector('#contact-form');
-    const FORMSUBMIT_ENDPOINT = 'https://formsubmit.co/ajax/pablo.ruibal.sutil@gmail.com';
-
-    async function handleSubmit(e) {
-      e.preventDefault();
-      const form = e.target;
-      const btn = form.querySelector('.form-submit');
-      const original = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = 'Sending…';
-
-      const formData = new FormData(form);
-      const subject = (formData.get('subject') || '').toString().trim();
-      formData.set('_subject', subject || 'Portfolio inquiry');
-
-      try {
-        const res = await fetch(FORMSUBMIT_ENDPOINT, {
-          method: 'POST',
-          headers: { Accept: 'application/json' },
-          body: formData
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || data.success === 'false') {
-          const msg = typeof data.message === 'string' ? data.message : '';
-          throw new Error(msg || 'Send failed');
-        }
-
-        btn.textContent = 'Message sent';
-        btn.style.background = 'var(--gold)';
-        btn.style.borderColor = 'var(--gold)';
-        btn.style.color = 'var(--white)';
-        form.reset();
-        setTimeout(() => {
-          btn.textContent = original;
-          btn.style.background = '';
-          btn.style.borderColor = '';
-          btn.style.color = '';
-          btn.disabled = false;
-        }, 2500);
-      } catch (err) {
-        btn.textContent = 'Could not send — try email';
-        btn.style.background = '#8a4a4a';
-        btn.style.borderColor = '#8a4a4a';
-        btn.style.color = 'var(--white)';
-        setTimeout(() => {
-          btn.textContent = original;
-          btn.style.background = '';
-          btn.style.borderColor = '';
-          btn.style.color = '';
-          btn.disabled = false;
-        }, 4000);
-      }
+    const formNext = document.getElementById('form-next');
+    if (formNext) {
+      formNext.value = window.location.origin + window.location.pathname + '#contact';
     }
-
-    if (contactForm) contactForm.addEventListener('submit', handleSubmit);
+    if (contactForm) {
+      contactForm.addEventListener('submit', function () {
+        const sub = document.getElementById('subject');
+        const hiddenSubject = document.getElementById('_subject_field');
+        if (hiddenSubject && sub) hiddenSubject.value = sub.value.trim() || 'Portfolio inquiry';
+      });
+    }
   </script>
 
 </body>
