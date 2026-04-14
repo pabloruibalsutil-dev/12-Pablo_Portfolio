@@ -1295,9 +1295,8 @@
       if (wasMobile !== isMobile) location.reload();
     });
 
-    // Contact form → Web3Forms (HTTPS). FormSubmit was removed: some devices show NET::ERR_CERT_COMMON_NAME_INVALID on formsubmit.co.
-    // Free key (same inbox): https://web3forms.com — paste below. Leave empty to fall back to mailto (opens the visitor's email app).
-    const WEB3FORMS_ACCESS_KEY = '';
+    // Contact form → Web3Forms (HTTPS). Key from https://web3forms.com (public in frontend; restrict domain in Web3Forms dashboard).
+    const WEB3FORMS_ACCESS_KEY = '9ac39047-adb4-494c-af89-0492dee369b6';
     const CONTACT_EMAIL = 'pablo.ruibal.sutil@gmail.com';
 
     const contactForm = document.querySelector('#contact-form');
