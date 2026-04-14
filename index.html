@@ -45,6 +45,12 @@
       font-size: 16px;
     }
 
+    html.modal-open,
+    body.modal-open {
+      overflow: hidden !important;
+      touch-action: none;
+    }
+
     ::selection {
       background: var(--gold-light);
       color: var(--charcoal);
@@ -590,6 +596,120 @@
       color: var(--charcoal);
     }
 
+    /* ─── Form success modal ─── */
+
+    .form-success-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 220;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(1.25rem, 4vw, 2rem);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0.4s;
+    }
+
+    .form-success-modal.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .form-success-modal__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(26, 26, 26, 0.5);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      cursor: pointer;
+    }
+
+    .form-success-modal__dialog {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      background: var(--off-white);
+      border: 1px solid rgba(184, 149, 106, 0.35);
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.06),
+        0 32px 64px rgba(0, 0, 0, 0.1);
+      padding: clamp(2rem, 5vw, 2.75rem) clamp(1.75rem, 4vw, 2.5rem);
+      transform: translateY(20px) scale(0.98);
+      opacity: 0;
+      transition:
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .form-success-modal.is-open .form-success-modal__dialog {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    .form-success-modal__line {
+      width: 1px;
+      height: 36px;
+      background: var(--gold);
+      margin: 0 auto 1.25rem;
+    }
+
+    .form-success-modal__eyebrow {
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--gold);
+      text-align: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .form-success-modal__title {
+      font-family: var(--serif);
+      font-size: clamp(1.65rem, 4vw, 2.1rem);
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      color: var(--charcoal);
+      text-align: center;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+
+    .form-success-modal__text {
+      font-size: clamp(0.92rem, 1.05vw, 1rem);
+      font-weight: 300;
+      color: var(--text);
+      text-align: center;
+      line-height: 1.85;
+      margin-bottom: 1.75rem;
+    }
+
+    .form-success-modal__actions {
+      display: flex;
+      justify-content: center;
+    }
+
+    .form-success-modal__close {
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--white);
+      background: var(--charcoal);
+      border: 1px solid var(--charcoal);
+      padding: 1rem 2.25rem;
+      cursor: pointer;
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .form-success-modal__close:hover {
+      background: transparent;
+      color: var(--charcoal);
+    }
+
     /* ─── Footer ─── */
 
     .footer-bar {
@@ -984,6 +1104,19 @@
 
   </div>
 
+  <div id="form-success-modal" class="form-success-modal" hidden role="dialog" aria-modal="true" aria-labelledby="form-success-title" aria-describedby="form-success-desc">
+    <div class="form-success-modal__backdrop" data-close-modal tabindex="-1" aria-hidden="true"></div>
+    <div class="form-success-modal__dialog">
+      <div class="form-success-modal__line" aria-hidden="true"></div>
+      <p class="form-success-modal__eyebrow">Contact</p>
+      <h2 id="form-success-title" class="form-success-modal__title">Message received</h2>
+      <p id="form-success-desc" class="form-success-modal__text">Thank you for getting in touch. Your note is on its way, and I will reply as soon as I can.</p>
+      <div class="form-success-modal__actions">
+        <button type="button" class="form-success-modal__close" data-close-modal>Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const footerYear = document.getElementById('footer-year');
     if (footerYear) footerYear.textContent = new Date().getFullYear();
@@ -1088,26 +1221,24 @@
     // Nav link clicks
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', (e) => {
-        e.preventDefault();
-        const id = anchor.getAttribute('href').slice(1);
+        const href = anchor.getAttribute('href');
+        if (!href || href === '#') return;
+        const id = href.slice(1);
         const target = document.getElementById(id);
         if (!target) return;
 
         if (isMobile) {
-          const menuWasOpen = navLinks && navLinks.classList.contains('open');
-          if (menuWasOpen && menuToggle) {
+          if (navLinks && navLinks.classList.contains('open') && menuToggle) {
             menuToggle.classList.remove('active');
             navLinks.classList.remove('open');
           }
-          const scrollToTarget = () => {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          };
-          if (menuWasOpen) setTimeout(scrollToTarget, 480);
-          else scrollToTarget();
-        } else {
-          const idx = Array.from(panels).findIndex(p => p.id === id);
-          if (idx >= 0) goTo(idx);
+          /* Native #fragment scroll (no preventDefault) — works reliably on mobile; JS scrollIntoView did not. */
+          return;
         }
+
+        e.preventDefault();
+        const idx = Array.from(panels).findIndex(p => p.id === id);
+        if (idx >= 0) goTo(idx);
       });
     });
 
@@ -1157,11 +1288,14 @@
       if (wasMobile !== isMobile) location.reload();
     });
 
-    // Contact form → FormSubmit via normal POST (more reliable than fetch: ad blockers, JSON quirks, activation edge cases)
+    // Contact form → FormSubmit POST; _next includes ?sent=1 so we can show a success modal after redirect
     const contactForm = document.querySelector('#contact-form');
     const formNext = document.getElementById('form-next');
     if (formNext) {
-      formNext.value = window.location.origin + window.location.pathname + '#contact';
+      const nextUrl = new URL(window.location.href);
+      nextUrl.hash = 'contact';
+      nextUrl.searchParams.set('sent', '1');
+      formNext.value = nextUrl.toString();
     }
     if (contactForm) {
       contactForm.addEventListener('submit', function () {
@@ -1170,6 +1304,70 @@
         if (hiddenSubject && sub) hiddenSubject.value = sub.value.trim() || 'Portfolio inquiry';
       });
     }
+
+    const successModal = document.getElementById('form-success-modal');
+    let successModalPrevFocus = null;
+
+    function openSuccessModal() {
+      if (!successModal) return;
+      successModalPrevFocus = document.activeElement;
+      successModal.removeAttribute('hidden');
+      requestAnimationFrame(() => {
+        successModal.classList.add('is-open');
+        document.documentElement.classList.add('modal-open');
+        document.body.classList.add('modal-open');
+      });
+      const closeBtn = successModal.querySelector('.form-success-modal__close');
+      if (closeBtn) closeBtn.focus();
+    }
+
+    function closeSuccessModal() {
+      if (!successModal) return;
+      successModal.classList.remove('is-open');
+      document.documentElement.classList.remove('modal-open');
+      document.body.classList.remove('modal-open');
+      setTimeout(() => successModal.setAttribute('hidden', ''), 450);
+      if (successModalPrevFocus && typeof successModalPrevFocus.focus === 'function') {
+        try { successModalPrevFocus.focus(); } catch (_) {}
+      }
+    }
+
+    if (successModal) {
+      successModal.querySelectorAll('[data-close-modal]').forEach((el) => {
+        el.addEventListener('click', (e) => {
+          if (e.target === el) closeSuccessModal();
+        });
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (!successModal || !successModal.classList.contains('is-open')) return;
+      e.preventDefault();
+      closeSuccessModal();
+    }, true);
+
+    (function handleFormSuccessReturn() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('sent') !== '1') return;
+
+      const clean = new URL(window.location.href);
+      clean.searchParams.delete('sent');
+      if (!clean.hash || clean.hash === '#') clean.hash = 'contact';
+      window.history.replaceState({}, '', clean.pathname + clean.search + clean.hash);
+
+      const contactIdx = Array.from(panels).findIndex((p) => p.id === 'contact');
+      if (!isMobile && contactIdx >= 0) {
+        goTo(contactIdx);
+      } else {
+        const contactEl = document.getElementById('contact');
+        if (contactEl) {
+          requestAnimationFrame(() => contactEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        }
+      }
+
+      openSuccessModal();
+    })();
   </script>
 
 </body>
